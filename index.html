@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="terminal">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Yaadon Ka Radio — Terminal FM</title>
+<meta name="description" content="A terminal-styled radio: tune into Pakistani, Indian, Singaporean, Arabic and world stations, plus podcasts, from one dial.">
+<meta name="theme-color" content="#05070a">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon.svg">
+<link rel="manifest" href="manifest.json">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=VT323&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<script>
+// Restore the saved theme before first paint, so there's no flash of the
+// default terminal theme when a different one was chosen last time.
+(function () {
+  try {
+    var t = localStorage.getItem("ykr_theme");
+    if (t) document.documentElement.setAttribute("data-theme", t);
+  } catch (e) {}
+})();
+</script>
+</head>
+<body>
+
+<div class="app" id="app">
+  <div class="scanlines" aria-hidden="true"></div>
+  <div class="crt-vignette" aria-hidden="true"></div>
+
+  <header class="topbar">
+    <div class="prompt">
+      <span class="prompt-user">yaadon@radio</span><span class="prompt-sep">:</span><span class="prompt-path">~</span><span class="prompt-dollar">$</span>
+      <span class="prompt-cmd">tune</span>
+      <span class="caret">█</span>
+    </div>
+    <div class="topbar-right">
+      <div class="clock" id="clock">00:00:00</div>
+      <div class="listeners">
+        <span class="pulse-dot"></span>
+        <span id="listenerCount">—</span> online
+      </div>
+      <div class="theme-switcher" id="themeSwitcher">
+        <button class="iconbtn" id="themeBtn" aria-label="Change theme" title="Theme" aria-haspopup="true" aria-expanded="false">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="3" width="7" height="7" rx="1"/>
+            <rect x="14" y="3" width="7" height="7" rx="1"/>
+            <rect x="3" y="14" width="7" height="7" rx="1"/>
+            <rect x="14" y="14" width="7" height="7" rx="1"/>
+          </svg>
+        </button>
+        <div class="theme-menu" id="themeMenu" role="menu" aria-label="Choose a theme" hidden></div>
+      </div>
+      <div class="settings-switcher" id="settingsSwitcher">
+        <button class="iconbtn" id="settingsBtn" aria-label="Podcast Index API settings" title="Podcast Index API key" aria-haspopup="true" aria-expanded="false">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="3"/>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6 1.65 1.65 0 0 0 10 3.09V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+          </svg>
+        </button>
+        <div class="settings-panel" id="settingsPanel" role="dialog" aria-label="Podcast Index API settings" hidden>
+          <p class="settings-title">Podcast Index API</p>
+          <p class="settings-hint">Powers the 🌍 World Podcasts list. Free key: <a href="https://podcastindex.org/developer" target="_blank" rel="noopener noreferrer">podcastindex.org/developer</a></p>
+          <label class="settings-label" for="piKeyInput">API Key</label>
+          <input type="text" id="piKeyInput" autocomplete="off" spellcheck="false" placeholder="paste your key">
+          <label class="settings-label" for="piSecretInput">API Secret</label>
+          <input type="password" id="piSecretInput" autocomplete="off" spellcheck="false" placeholder="paste your secret">
+          <div class="settings-actions">
+            <button type="button" class="settings-btn settings-btn-primary" id="piSaveBtn">Save</button>
+            <button type="button" class="settings-btn" id="piClearBtn">Clear</button>
+          </div>
+          <p class="settings-status" id="piStatus"></p>
+          <p class="settings-note">Stored only in this browser (localStorage) — sent only to api.podcastindex.org, and only when you browse World Podcasts.</p>
+        </div>
+      </div>
+      <button class="iconbtn" id="fullscreenBtn" aria-label="Toggle fullscreen" title="Fullscreen">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+          <path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/>
+        </svg>
+      </button>
+    </div>
+  </header>
+
+  <p class="tagline">// old-school radio across the region — tune in, keep working.</p>
+
+  <nav class="tabs" id="regionTabs" aria-label="Choose a region or podcasts"></nav>
+
+  <div class="searchbar">
+    <span class="search-prompt">&gt;</span>
+    <input type="text" id="searchInput" placeholder="search stations or episodes…" autocomplete="off" spellcheck="false">
+  </div>
+  <p class="search-hint" id="searchHint"></p>
+
+  <main class="list-wrap">
+    <div class="list" id="stationList"></div>
+  </main>
+
+  <footer class="player">
+    <button class="playbtn" id="playBtn" aria-label="Play">
+      <svg id="iconPlay" viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+      <svg id="iconPause" viewBox="0 0 24 24" width="20" height="20" fill="currentColor" style="display:none"><path d="M6 5h4v14H6zM14 5h4v14h-4z"/></svg>
+      <svg id="iconLoad" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" style="display:none" class="spin"><path d="M12 3a9 9 0 1 0 9 9" stroke-linecap="round"/></svg>
+    </button>
+
+    <div class="player-body">
+      <div class="player-meta">
+        <span class="np-flag" id="npFlag">🇵🇰</span>
+        <div class="player-text">
+          <div class="player-row">
+            <span class="player-title" id="playerTitle">—</span>
+            <span class="tag tag-red live-tag" id="liveTag">● LIVE</span>
+          </div>
+          <div class="player-sub" id="playerSub">select a station</div>
+        </div>
+      </div>
+
+      <div class="progress-wrap" id="progressWrap" hidden>
+        <span class="time" id="timeCurrent">0:00</span>
+        <div class="progress-bar" id="progressBar"><div class="progress-fill" id="progressFill"></div></div>
+        <span class="time" id="timeTotal">0:00</span>
+      </div>
+
+      <div class="np-status" id="npStatus">—</div>
+    </div>
+
+    <div class="speed-switcher" id="speedSwitcher" hidden>
+      <button class="speed-btn" id="speedBtn" aria-haspopup="true" aria-expanded="false" title="Playback speed">
+        <span id="speedLabel">1×</span>
+      </button>
+      <div class="speed-menu" id="speedMenu" role="menu" aria-label="Playback speed" hidden></div>
+    </div>
+
+    <div class="volume">
+      <svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor" aria-hidden="true"><path d="M4 9v6h4l5 5V4L8 9H4z"/></svg>
+      <input type="range" id="volume" min="0" max="1" step="0.01" value="0.8" aria-label="Volume">
+    </div>
+  </footer>
+
+  <p class="legal">
+    stations are independently operated public streams, embedded live — not hosted by this app. podcast search uses Apple's public podcast index; World Podcasts uses the Podcast Index API (with your own free key); episodes stream from each show's own feed. some sources may go offline without notice.
+    <span class="np-station-sr" id="npStation" hidden></span>
+  </p>
+</div>
+
+<audio id="audio" preload="none"></audio>
+<!-- Plays HLS (.m3u8) streams in browsers without native HLS support
+     (everything except Safari) — several World-tab stations are HLS-only.
+     Loaded before script.js; script.js checks window.Hls before using it. -->
+<script src="https://cdn.jsdelivr.net/npm/hls.js@1/dist/hls.min.js"></script>
+<script src="script.js"></script>
+</body>
+</html>
